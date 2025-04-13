@@ -1,79 +1,86 @@
-#include <stdarg.h>
 #include <unistd.h>
+#include <stdarg.h>
 
-static void ft_putstr(char *str, int *count)
+//search on terminal for <man stdarg> 
+
+void ft_putstr(char *str, int *d)
 {
-    if (!str)
-        str = "(null)";
-    while (*str)
+    if (!str)                // If string is NULL
+        str = "(null)";      // Replace with "(null)"
+    while (*str)            // Loop through each char
     {
-        write(1, str++, 1);
-        (*count)++;
+        write(1, str++, 1); // Write char, move pointer
+        (*d)++;         // Increment d
     }
 }
 
-static void ft_putnbr(int n, int *count)
+void ft_putnbr(int n, int *d)
 {
-    char c;
-    if (n == -2147483648)
+    char c;                 // Temp char for digit
+    if (n == -2147483648)   // Special case for INT_MIN
     {
-        ft_putstr("-2147483648", count);
+        ft_putstr("-2147483648", d); // Print directly
         return;
     }
-    if (n < 0)
+    if (n < 0)              // Handle negatives
     {
-        write(1, "-", 1);
-        count++;
-        n = -n;
+        write(1, "-", 1);   // Print minus
+        (*d)++;
+        n = -n;             // Make positive
     }
-    if (n > 9)
-        ft_putnbr(n / 10, count);
-    c = (n % 10) + '0';
-    write(1, &c, 1);
-    (*count)++;
+    if (n > 9)              // Multi-digit
+        ft_putnbr(n / 10, d); // Recurse for higher digits
+    c = (n % 10) + '0';     // Convert last digit to char
+    write(1, &c, 1);        // Print it
+    (*d)++;             // Increment d
 }
 
-static void ft_puthex(unsigned int n, int *count)
+void ft_puthex(unsigned int n, int *d)
 {
-    char *hex = "0123456789abcdef";
-    
-    if (n >= 16)
-        ft_puthex(n / 16, count);
-    write(1, &hex[n % 16], 1);
-    (*count)++;
+    char *hex = "0123456789abcdef"; // Hex lookup
+    if (n >= 16)                   // Multi-digit hex
+        ft_puthex(n / 16, d);  // Recurse
+    write(1, &hex[n % 16], 1);     // Print last digit
+    (*d)++;                    // Increment d
 }
 
-int ft_printf(const char *format, ... )
+//search on terminal for <man stdarg>, you'll find the format
+
+int ft_printf(const char *format, ...)
 {
-    va_list args;
-    int count;
-    count = 0;
-    va_start(args, format);
-    while (*format)
+    va_list ap;           // Variable ap
+    int d = 0;          // Total chars printed
+    va_start(ap, format); // Start ap
+    while (*format)         // Loop format string
     {
-        if (*format == '%' && *(format + 1))
+        if (*format == '%' && *(format + 1)) // Specifier check
         {
-            format++;
+            format++;       // Skip '%'
             if (*format == 's')
-                ft_putstr(va_arg(args, char *), &count);
+                ft_putstr(va_arg(ap, char *), &d);
             else if (*format == 'd')
-                ft_putnbr(va_arg(args, int), &count);
+                ft_putnbr(va_arg(ap, int), &d);
             else if (*format == 'x')
-                ft_puthex(va_arg(args, unsigned int), &count);
-            else
+                ft_puthex(va_arg(ap, unsigned int), &d);
+            else            // Unknown specifier
             {
                 write(1, format, 1);
-                count++;
+                d++;
             }
         }
-        else
+        else                // Normal char
         {
             write(1, format, 1);
-            count++;
+            d++;
         }
-        format++;
+        format++;           // Next char
     }
-    va_end(args);
-    return (count);
+    va_end(ap);           // Clean up
+    return (d);         // Return total
+}
 
+int main(void)
+{
+    ft_printf("Hello %s, %d, %x\n", "world", -42, 255);
+    return (0);
 }
